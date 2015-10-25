@@ -6,15 +6,13 @@
     tools:context=".MainActivity"
     tools:ignore="MergeRootFrame" >
 
-    <SurfaceView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/surfaceView" />
-
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
+        android:layout_height="fill_parent"
+        android:layout_gravity="center_horizontal|bottom"
+        android:weightSum="1"
+        android:id="@+id/id">
 
         <TextView
             android:layout_width="wrap_content"
@@ -52,6 +50,20 @@
                 android:textOff="Stop"
                 android:textOn="Stop" />
         </LinearLayout>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Test bandwidth"
+            android:id="@+id/button"
+            android:onClick="getBandwidth" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/editText"
+            android:text="input your destination here"
+            android:editable="true" />
 
     </LinearLayout>
 

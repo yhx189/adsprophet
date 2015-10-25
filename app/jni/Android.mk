@@ -18,5 +18,9 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := king
 LOCAL_SRC_FILES := king.c dns_rr_manipulation.c recNameServer.c utility_functions.c
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
+LOCAL_COPY_HEADERS_TO := libcurl
+LOCAL_COPY_HEADERS := $(addprefix curl/include/curl/,$(HHEADERS))
+LOCAL_MODULE:= libcurl
 
 include $(BUILD_SHARED_LIBRARY)
