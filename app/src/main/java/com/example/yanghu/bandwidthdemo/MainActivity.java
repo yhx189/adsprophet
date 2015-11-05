@@ -25,6 +25,7 @@ import android.widget.Button;
 import android.view.View;
 import android.os.Parcelable;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -41,6 +42,8 @@ public class MainActivity extends ActionBarActivity {
     SurfaceView mPreview;
     SurfaceHolder holder;
     private EditText input;
+    private TextView firstBd;
+    private TextView totalBd;
 
     class myPhoneStateListener extends PhoneStateListener {
 
@@ -87,8 +90,8 @@ public class MainActivity extends ActionBarActivity {
 
         }
         input = (EditText) findViewById(R.id.editText);
-
-
+        firstBd = (TextView) findViewById(R.id.firstBD);
+        totalBd = (TextView) findViewById(R.id.totalBd);
 
 
 
@@ -126,67 +129,19 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
-
-        public PlaceholderFragment() {
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            return rootView;
-        }
-    }
-    public void startVideo(View view){
-        videoURL = "http://165.124.182.209:8082/ti5-a.mp4";
 
 
-        //mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        try{
-            mediaPlayer.setDataSource(videoURL);
-        }catch (Exception e) {
-            Log.wtf("DO THIS", " WHEN setDataSource() FAILS");
-        }
-        try{
-            mediaPlayer.prepare(); // might take long! (for buffering, etc)
-        }catch (Exception e) {
-            Log.wtf("DO THIS", " WHEN prepare() FAILS");
-        }
-        Context context = getApplicationContext();
-        CharSequence text = "video started!";
-        int duration = Toast.LENGTH_SHORT;
-
-        Toast toast = Toast.makeText(context, text, duration);
-        toast.show();
-        mediaPlayer.start();
-
-    }
-    public void endVideo(View view){
-        mediaPlayer.stop();
-        Context context = getApplicationContext();
-        CharSequence text = "video stopped!";
-        int duration = Toast.LENGTH_SHORT;
-
-        Toast toast = Toast.makeText(context, text, duration);
-        toast.show();
-
-
-    }
     public String getBandwidth(View view){
         // public native void getBandwidth();
         boolean sudo = false;
-
+        input.setEnabled(false);
 
         CharSequence text = input.getText().toString();
         Context context = getApplicationContext();
         int duration = Toast.LENGTH_SHORT;
 
         String firstHop = "";
-        String traceRoute = "ping -c 1 -t 1 google.com";
+        String traceRoute = "ping -c 1 -t 1 " + "google.com";
         try{
             Process pro;
             //pro = Runtime.getRuntime().exec(new String[]{"su", "-c", traceRoute});
@@ -249,6 +204,9 @@ public class MainActivity extends ActionBarActivity {
                 Toast toast = Toast.makeText(context, text, duration);
                 toast.show();
                 System.out.println("current bandwidth is " + bandwidth + "KBps\n");
+                firstBd.setText("first Mile bandwidth is " + bandwidth + "KBps\n");
+                input.setEnabled(true);
+
             }else {
                 System.out.println(res);
             }

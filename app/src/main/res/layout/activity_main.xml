@@ -17,53 +17,43 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="bandwidth:"
+            android:text="Bandwidth"
             android:id="@+id/textView"
             android:layout_gravity="center_horizontal"
             android:textSize="40dp" />
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="250dp">
-
-            <ToggleButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="start"
-                android:id="@+id/toggleButton"
-                android:singleLine="true"
-                android:onClick="startVideo"
-                android:nestedScrollingEnabled="false"
-                android:textOff="Start"
-                android:textOn="Start" />
-
-            <ToggleButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="stop"
-                android:id="@+id/toggleButton2"
-                android:layout_marginLeft="200dp"
-                android:onClick="endVideo"
-                android:textOff="Stop"
-                android:textOn="Stop" />
-        </LinearLayout>
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Test bandwidth"
             android:id="@+id/button"
-            android:onClick="getBandwidth" />
+            android:onClick="getBandwidth"
+            android:layout_marginTop="100dp" />
 
         <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/editText"
             android:text="input your destination here"
-            android:editable="true" />
+            android:editable="true"
+            android:imeOptions="actionDone"
+            android:layout_marginTop="20dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text=""
+            android:id="@+id/firstBD"
+            android:layout_marginTop="50dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text=""
+            android:id="@+id/totalBd"
+            android:layout_gravity="bottom" />
 
     </LinearLayout>
 
