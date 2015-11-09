@@ -31,7 +31,7 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import java.io.*;
 import java.util.regex.*;
-
+import 	java.util.Arrays;
 public class MainActivity extends ActionBarActivity {
     public String videoURL;
 
@@ -130,6 +130,51 @@ public class MainActivity extends ActionBarActivity {
     }
 
 
+    public float getOne(String firstHop){
+        boolean sudo = false;
+        CharSequence text = input.getText().toString();
+        Context context = getApplicationContext();
+        int duration = Toast.LENGTH_SHORT;
+        String cmd = "ping -c 1 -s 1000 " + firstHop;//google.com";
+        try {
+
+            Process p;
+            if(!sudo)
+                p= Runtime.getRuntime().exec(cmd);
+            else{
+                p= Runtime.getRuntime().exec(new String[]{"su", "-c", cmd});
+            }
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String s;
+            String res = "";
+            while ((s = stdInput.readLine()) != null) {
+                res += s + "\n";
+            }
+            p.destroy();
+            int start = res.indexOf("min/avg/max/mdev =");
+            float bandwidth = 0;
+            if(start != -1){
+                float lat = (Float.valueOf(res.substring(start+26, start+30 ))).floatValue();
+                bandwidth = 1000 / lat;
+
+                text = "current latency is " + lat + "ms\n";
+                //System.out.println("current latency is " + lat + "ms\n");
+                text = text + "current bandwidth is " + bandwidth + "KBps\n";
+                Toast toast = Toast.makeText(context, text, duration);
+                toast.show();
+                //System.out.println("current bandwidth is " + bandwidth + "KBps\n");
+                firstBd.setText("first Mile bandwidth is " + bandwidth + "KBps\n");
+                input.setEnabled(true);
+
+            }else {
+                //System.out.println(res);
+            }
+            return bandwidth;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 
     public String getBandwidth(View view){
         // public native void getBandwidth();
@@ -176,7 +221,23 @@ public class MainActivity extends ActionBarActivity {
         }catch (Exception e) {
             e.printStackTrace();
         }
+        float[] bds = new float[10];
+        float mean = 0;
+        for(int i=0;i<10;i++){
+            bds[i] = getOne(firstHop);
+            mean = mean + bds[i];
+            System.out.println(bds[i]);
+        }
+        Arrays.sort(bds);
 
+        double median;
+        if (bds.length % 2 == 0)
+            median = ((double)bds[bds.length/2] + (double)bds[bds.length/2 - 1])/2;
+        else
+            median = (double) bds[bds.length/2];
+        totalBd.setText("total bandwidth is " + mean/10 + "KB/s");
+        return "";
+        /*
         String cmd = "ping -c 1 -s 1000 " + firstHop;//google.com";
         try {
 
@@ -216,6 +277,7 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return "";
+        */
 
     }
 
