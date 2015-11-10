@@ -153,21 +153,23 @@ public class MainActivity extends ActionBarActivity {
             p.destroy();
             int start = res.indexOf("min/avg/max/mdev =");
             float bandwidth = 0;
+            float lat = 0;
             if(start != -1){
-                float lat = (Float.valueOf(res.substring(start+26, start+30 ))).floatValue();
+                lat = (Float.valueOf(res.substring(start+26, start+30 ))).floatValue();
                 bandwidth = 1000 / lat;
 
                 text = "current latency is " + lat + "ms\n";
                 //System.out.println("current latency is " + lat + "ms\n");
                 text = text + "current bandwidth is " + bandwidth + "KBps\n";
-                Toast toast = Toast.makeText(context, text, duration);
-                toast.show();
+                //Toast toast = Toast.makeText(context, text, duration);
+                //toast.show();
                 //System.out.println("current bandwidth is " + bandwidth + "KBps\n");
-                firstBd.setText("first Mile bandwidth is " + bandwidth + "KBps\n");
+                //firstBd.setText("first Mile bandwidth is " + bandwidth + "KBps\n");
                 input.setEnabled(true);
+                return bandwidth;
 
             }else {
-                //System.out.println(res);
+                System.out.println(res);
             }
             return bandwidth;
         } catch (Exception e) {
@@ -186,7 +188,7 @@ public class MainActivity extends ActionBarActivity {
         int duration = Toast.LENGTH_SHORT;
 
         String firstHop = "";
-        String traceRoute = "ping -c 1 -t 1 " + "google.com";
+        String traceRoute = "ping -c 1 -t 1 " + "www.weibo.com";
         try{
             Process pro;
             //pro = Runtime.getRuntime().exec(new String[]{"su", "-c", traceRoute});
@@ -235,10 +237,12 @@ public class MainActivity extends ActionBarActivity {
             median = ((double)bds[bds.length/2] + (double)bds[bds.length/2 - 1])/2;
         else
             median = (double) bds[bds.length/2];
-        totalBd.setText("total bandwidth is " + mean/10 + "KB/s");
-        return "";
-        /*
-        String cmd = "ping -c 1 -s 1000 " + firstHop;//google.com";
+        firstBd.setText("first bandwidth is " + String.format("%.2f", median)  + "KB/s");
+
+
+
+        String cmd = "ping -c 1 -s 1000 " + "www.weibo.com.cn";//google.com";
+        float bandwidth = 0;
         try {
 
             Process p;
@@ -257,15 +261,15 @@ public class MainActivity extends ActionBarActivity {
             int start = res.indexOf("min/avg/max/mdev =");
             if(start != -1){
                 float lat = (Float.valueOf(res.substring(start+26, start+30 ))).floatValue();
-                float bandwidth = 1000 / lat;
+                bandwidth = 1000 / lat;
 
                 text = "current latency is " + lat + "ms\n";
                 System.out.println("current latency is " + lat + "ms\n");
                 text = text + "current bandwidth is " + bandwidth + "KBps\n";
-                Toast toast = Toast.makeText(context, text, duration);
-                toast.show();
+                //Toast toast = Toast.makeText(context, text, duration);
+                //toast.show();
                 System.out.println("current bandwidth is " + bandwidth + "KBps\n");
-                firstBd.setText("first Mile bandwidth is " + bandwidth + "KBps\n");
+                //firstBd.setText("first Mile bandwidth is " + bandwidth + "KBps\n");
                 input.setEnabled(true);
 
             }else {
@@ -275,9 +279,11 @@ public class MainActivity extends ActionBarActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
+        float measuredBd = 0;
+        measuredBd = getOne("www.weibo.com.cn");
+        totalBd.setText("total bandwidth is " + String.format("%.2f", bandwidth)  + "KB/s");
         return "";
-        */
+
 
     }
 
