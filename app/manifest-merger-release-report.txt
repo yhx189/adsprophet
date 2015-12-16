@@ -35,8 +35,8 @@ ADDED from AndroidManifest.xml:8:5
 		ADDED from AndroidManifest.xml:8:22
 application
 ADDED from AndroidManifest.xml:10:5
-MERGED from com.android.support:appcompat-v7:21.0.3:16:5
-MERGED from com.android.support:support-v4:21.0.3:16:5
+MERGED from com.android.support:appcompat-v7:20.0.0:17:5
+MERGED from com.android.support:support-v4:20.0.0:17:5
 MERGED from adsprophet:volley:unspecified:9:5
 	android:label
 		ADDED from AndroidManifest.xml:13:9
@@ -64,8 +64,8 @@ ADDED from AndroidManifest.xml:21:17
 		ADDED from AndroidManifest.xml:21:27
 uses-sdk
 INJECTED from AndroidManifest.xml:0:0 reason: use-sdk injection requested
-MERGED from com.android.support:appcompat-v7:21.0.3:15:5
-MERGED from com.android.support:support-v4:21.0.3:15:5
+MERGED from com.android.support:appcompat-v7:20.0.0:16:5
+MERGED from com.android.support:support-v4:20.0.0:16:5
 MERGED from adsprophet:volley:unspecified:7:5
 	android:targetSdkVersion
 		INJECTED from AndroidManifest.xml:0:0

@@ -1,7 +1,6 @@
 package com.example.yanghu.bandwidthdemo;
 
 import android.content.Context;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -19,11 +18,6 @@ import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.ViewGroup;
-import android.os.Build;
-import android.widget.Button;
-import android.view.View;
-import android.os.Parcelable;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,17 +42,7 @@ import com.android.volley.Network;
 import com.android.volley.toolbox.BasicNetwork;
 import com.android.volley.toolbox.DiskBasedCache;
 import com.android.volley.toolbox.HurlStack;
-import 	java.util.Arrays;
-import org.apache.http.HttpResponse;
 
-import org.apache.http.client.HttpClient;
-
-import org.apache.http.client.methods.HttpGet;
-
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.HttpStatus;
-import org.apache.http.params.CoreProtocolPNames;
-import org.apache.http.StatusLine;
 public class MainActivity extends ActionBarActivity {
     public String videoURL;
 
@@ -73,6 +57,9 @@ public class MainActivity extends ActionBarActivity {
     private TextView totalBd;
     private TextView packetPair;
     float selectedHop = 0;
+    String dstIp;
+    String dst = "google.com";
+    float firstEst = 0, secondEst = 0;
     class myPhoneStateListener extends PhoneStateListener {
 
         @Override
@@ -87,7 +74,7 @@ public class MainActivity extends ActionBarActivity {
             WifiInfo wifiInfo = mainWifi.getConnectionInfo();
             int level= WifiManager.calculateSignalLevel(wifiInfo.getRssi(), numberOfLevels);
 
-            CharSequence text = "Signal Strength:"+ level + " \n Bandwidth: " ;
+            CharSequence text = "Signal Strength:"+ level ;
 
             int duration = Toast.LENGTH_SHORT;
 
@@ -146,16 +133,6 @@ public class MainActivity extends ActionBarActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 // Apply the adapter to the spinner
         spinner.setAdapter(adapter);
-
-        /*
-        holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        mediaPlayer.setDisplay(holder);
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
-                    .commit();
-        }
-        */
     }
 
 
@@ -209,7 +186,7 @@ public class MainActivity extends ActionBarActivity {
             if(start != -1){
                 System.out.println(res);
                 lat = (Float.valueOf(res.substring(start+26, start+30 ))).floatValue();
-                bandwidth = 1000 / lat;
+                bandwidth = 50000 / lat;
 
                 text = "current latency is " + lat + "ms\n";
                 //System.out.println("current latency is " + lat + "ms\n");
@@ -231,11 +208,8 @@ public class MainActivity extends ActionBarActivity {
         return 0;
     }
     public float getTtl(String firstHop, int ttl){
-        boolean sudo = false;
-        CharSequence text = input.getText().toString();
-        Context context = getApplicationContext();
-        int duration = Toast.LENGTH_SHORT;
-        String cmd = "ping -c 1 -m " + (64 - ttl) +" " + firstHop;//google.com";
+
+        String cmd = "ping -c 1 -T " + ttl +" " + firstHop;//google.com";
         System.out.println(cmd);
         String dst = "";
         int cnt = 0;
@@ -282,6 +256,49 @@ public class MainActivity extends ActionBarActivity {
 
         return 0;
     }
+    public String endToEnd(View view) {
+        String cmd = "ping -c 1 -s 10 " + dst;
+        float bandwidth = 0;
+        boolean sudo = false;
+        try {
+
+            Process p;
+            if(!sudo)
+                p= Runtime.getRuntime().exec(cmd);
+            else{
+                p= Runtime.getRuntime().exec(new String[]{"su", "-c", cmd});
+            }
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String s;
+            String res = "";
+            while ((s = stdInput.readLine()) != null) {
+                res += s + "\n";
+
+            }
+            p.destroy();
+            int start = res.indexOf("min/avg/max/mdev =");
+            if(start != -1){
+                float lat = (Float.valueOf(res.substring(start+26, start+30 ))).floatValue();
+
+                bandwidth = 5000 / lat;
+                input.setEnabled(true);
+
+            }else {
+                System.out.println(res);
+            }
+            //return res;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //float measuredBd = 0;
+        //measuredBd = getOne("www.google.com");
+
+        totalBd.setText("Pinged e2e bandwidth is " + String.format("%.2f", bandwidth)  + "KB/s");
+        //firstBd.setText("Estimated first bandwidth is " + String.format("%.2f", firstEst)  + "KB/s");
+        packetPair.setText("Estimated e2e bandwidth is " + String.format("%.2f",Math.min(firstEst,secondEst) )  + "KB/s");
+
+        return "";
+    }
     public String queryKing(View view) {
         String ret = "";
 
@@ -289,9 +306,43 @@ public class MainActivity extends ActionBarActivity {
 
         TextView mTxtDisplay;
         ImageView mImageView;
+        int cnt = 0;
 
-        String url = "http://165.124.182.209:5000/todo/api/v1.0/tasks/2";
 
+        String cmd = "ping -c 1 -s 10 " + dst;
+        try {
+
+            Process p;
+
+            p = Runtime.getRuntime().exec(cmd);
+
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String s;
+            String res = "";
+            while ((s = stdInput.readLine()) != null) {
+                res += s + "\n";
+                String IPADDRESS_PATTERN =
+                        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])";
+                Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
+                Matcher matcher = pattern.matcher(s);
+                if (matcher.find()) {
+                    cnt = cnt + 1;
+                    if (cnt == 1) {
+                        System.out.println("find ip address in: " + matcher.group());
+                        dstIp = matcher.group();
+
+                    }
+                }
+
+            }
+            p.destroy();
+        }catch(Exception e){
+            System.out.println(e);
+        }
+        String url = "http://165.124.182.209:5000/todo/api/v1.0/tasks/" + dstIp;
         JsonObjectRequest jsObjRequest = new JsonObjectRequest
                 (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
 
@@ -301,7 +352,11 @@ public class MainActivity extends ActionBarActivity {
 
                             String res = response.getString("task");
                             int start = res.indexOf("bandwidth");
-                            packetPair.setText("Second Segment banwdith: " +  res.substring(start + 12, start + 15) + "KB/s");
+                            firstBd.setText("");
+                            totalBd.setText("");
+                            packetPair.setText("Second Segment bandwidth: " +  res.substring(start + 12, start + 17) + "KB/s");
+                            float lat = (Float.valueOf(res.substring(start+12, start+17 ))).floatValue();
+                            secondEst = lat;
                         }catch(Exception e){
                             System.out.println(e);
                         }
@@ -310,7 +365,7 @@ public class MainActivity extends ActionBarActivity {
 
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        // TODO Auto-generated method stub
+                        System.out.println(error);
 
                     }
                 });
@@ -334,186 +389,25 @@ public class MainActivity extends ActionBarActivity {
     }
     public String getBandwidth(View view){
         // public native void getBandwidth();
-        boolean sudo = false;
+
         input.setEnabled(false);
-        String dst = "google.com";
-        //String response = HttpRequest.get("http://google.com").body();
-        //System.out.println("Response was: " + response);
-        //
 
-        //String URL = "http://google.com";
-
-        //HttpClient httpclient = new DefaultHttpClient();
-
-        //
-
-        //try {
-
-        //HttpResponse response =  httpclient.execute(new HttpGet(URL));
-
-        //StatusLine statusLine = response.getStatusLine();
-
-        //if(statusLine.getStatusCode() == HttpStatus.SC_OK){
-
-        //
-
-        //ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-        //response.getEntity().writeTo(out);
-
-        //String responseString = out.toString();
-
-        //out.close();
-
-        //byte[] byteArray = out.toByteArray();
-
-        //for (byte b : byteArray)
-
-        //System.out.print(b+" ");
-
-        //
-
-        //
-
-        //} else{
-
-        ////Closes the connection.
-
-        //response.getEntity().getContent().close();
-
-        //throw new IOException(statusLine.getReasonPhrase());
-
-        //}
-
-        //
-
-        //}catch(IOException ie){
-
-        //ie.printStackTrace();
-
-        //}
-
-        //
-
-        CharSequence text = input.getText().toString();
+        String text = input.getText().toString();
         Context context = getApplicationContext();
         int duration = Toast.LENGTH_SHORT;
-/*
-        String firstHop = "";
-        String traceRoute = "ping -c 1 -t 1 " + "www.google.com";
-        try{
-            Process pro;
-            //pro = Runtime.getRuntime().exec(new String[]{"su", "-c", traceRoute});
-            pro = Runtime.getRuntime().exec(traceRoute);
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-            String s;
-            String res = "";
-            while ((s = stdInput.readLine()) != null) {
-                //s = "36 bytes from dhcp-10-105-0-1.wireless.northwestern.private (10.105.0.1): Time to live exceeded";
-                res += s + "\n";
-
-                String IPADDRESS_PATTERN =
-                        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-                                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-                                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-                                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])";
-                Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
-                Matcher matcher = pattern.matcher(s);
-                if (matcher.find()) {
-                    System.out.println("find ip address in: " + matcher.group());
-                    firstHop = matcher.group();
-
-                    System.out.println(matcher.group());
-                }
-                else{
-                    System.out.println(s);
-                    //System.out.println("did not find any ip address\n");
-                }
-            }
-
-            pro.destroy();
-        }catch (Exception e) {
-            e.printStackTrace();
+        int cnt = 0;
+        System.out.println(text);
+        if(!text.equals("input here")){
+            dst = text;
         }
-*/
-        /*
-        float[] bds = new float[10];
-        float mean = 0;
-        for(int i=0;i<10;i++){
-            bds[i] = getTtl("google.com", 1);
-            mean = mean + bds[i];
-            System.out.println(bds[i]);
-        }
-        Arrays.sort(bds);
-
-        double median;
-        if (bds.length % 2 == 0)
-            median = ((double)bds[bds.length/2] + (double)bds[bds.length/2 - 1])/2;
-        else
-            median = (double) bds[bds.length/2];
-        //firstBd.setText("TOPP bandwidth is " + String.format("%.2f", median)  + "KB/s");
-        firstBd.setText("TOPP bandwidth is " + bds[bds.length -1] + "KB/s");
-
-
-
-        float bandwidthfirst = 0;
-        for (int i = 1; i < 5; i++){
-            float tmp = getTtl("google.com", i);
-
-            if(i == 1)
-                bandwidthfirst = tmp;
-            System.out.println("bandwidth during traceroute is " + tmp);
-        }
-        */
-
 
         float packet = getTtl(dst, (int) selectedHop);//getOne("google.com");
-
+        firstEst = packet;
 
         packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet)  + "KB/s");
 
 
-        String cmd = "ping -c 1 -s 10 " + dst;
-        float bandwidth = 0;
-        try {
 
-            Process p;
-            if(!sudo)
-                p= Runtime.getRuntime().exec(cmd);
-            else{
-                p= Runtime.getRuntime().exec(new String[]{"su", "-c", cmd});
-            }
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String s;
-            String res = "";
-            while ((s = stdInput.readLine()) != null) {
-                res += s + "\n";
-            }
-            p.destroy();
-            int start = res.indexOf("min/avg/max/mdev =");
-            if(start != -1){
-                float lat = (Float.valueOf(res.substring(start+26, start+30 ))).floatValue();
-                bandwidth = 5000 / lat;
-
-                //text = "current latency is " + lat + "ms\n";
-                //System.out.println("current latency is " + lat + "ms\n");
-                //text = text + "current bandwidth is " + bandwidth + "KBps\n";
-                //Toast toast = Toast.makeText(context, text, duration);
-                //toast.show();
-                //System.out.println("current bandwidth is " + bandwidth + "KBps\n");
-                //firstBd.setText("first Mile bandwidth is " + bandwidth + "KBps\n");
-                input.setEnabled(true);
-
-            }else {
-                System.out.println(res);
-            }
-            //return res;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        //float measuredBd = 0;
-        //measuredBd = getOne("www.google.com");
-        totalBd.setText("total bandwidth is " + String.format("%.2f", bandwidth)  + "KB/s");
         return "";
 
 
