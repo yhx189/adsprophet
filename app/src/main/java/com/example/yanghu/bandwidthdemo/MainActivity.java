@@ -59,6 +59,7 @@ public class MainActivity extends ActionBarActivity {
     float selectedHop = 0;
     String dstIp;
     String dst = "google.com";
+    String ip = "";
     float firstEst = 0, secondEst = 0;
     class myPhoneStateListener extends PhoneStateListener {
 
@@ -164,7 +165,8 @@ public class MainActivity extends ActionBarActivity {
         CharSequence text = input.getText().toString();
         Context context = getApplicationContext();
         int duration = Toast.LENGTH_SHORT;
-        String cmd = "ping -c 1 -s 1000 " + firstHop;//google.com";
+        String cmd = "ping -c 1 -s 10 " + firstHop;//google.com";
+
         try {
 
             Process p;
@@ -186,7 +188,7 @@ public class MainActivity extends ActionBarActivity {
             if(start != -1){
                 System.out.println(res);
                 lat = (Float.valueOf(res.substring(start+26, start+30 ))).floatValue();
-                bandwidth = 50000 / lat;
+                bandwidth = 5000 / lat;
 
                 text = "current latency is " + lat + "ms\n";
                 //System.out.println("current latency is " + lat + "ms\n");
@@ -207,9 +209,64 @@ public class MainActivity extends ActionBarActivity {
         }
         return 0;
     }
-    public float getTtl(String firstHop, int ttl){
+    public float getTtl(String firstHop, int ttl) {
 
-        String cmd = "ping -c 1 -T " + ttl +" " + firstHop;//google.com";
+        String url = "http://165.124.182.209:5000/todo/api/v1.0/hops/" + ttl;
+
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+
+                            String res = response.getString("task");
+
+                            int start = res.indexOf("(");
+                            firstBd.setText("");
+                            totalBd.setText("");
+                            String IPADDRESS_PATTERN =
+                                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                                            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                                            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                                            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])";
+                            Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
+                            Matcher matcher = pattern.matcher(res);
+                            if (matcher.find()) {
+                                ip = matcher.group();
+                            }
+                            firstBd.setText("You selected hop " + (int) selectedHop + ", " + ip);
+                            float lat = (Float.valueOf(res.substring(start + 12, start + 17))).floatValue();
+                            secondEst = lat;
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        System.out.println(error);
+
+                    }
+                });
+
+// Access the RequestQueue through your singleton class.
+        RequestQueue mRequestQueue;
+        // Instantiate the cache
+        Cache cache = new DiskBasedCache(getCacheDir(), 1024 * 1024); // 1MB cap
+
+// Set up the network to use HttpURLConnection as the HTTP client.
+        Network network = new BasicNetwork(new HurlStack());
+
+// Instantiate the RequestQueue with the cache and network.
+        mRequestQueue = new RequestQueue(cache, network);
+        mRequestQueue.start();
+        mRequestQueue.add(jsObjRequest);
+        return getOne(ip);
+    }
+     /*
+        String cmd = "ping -c 1 " + firstHop;//google.com";
         System.out.println(cmd);
         String dst = "";
         int cnt = 0;
@@ -252,10 +309,10 @@ public class MainActivity extends ActionBarActivity {
             e.printStackTrace();
         }
 
+*/
 
 
-        return 0;
-    }
+
     public String endToEnd(View view) {
         String cmd = "ping -c 1 -s 10 " + dst;
         float bandwidth = 0;
@@ -405,7 +462,7 @@ public class MainActivity extends ActionBarActivity {
         firstEst = packet;
 
         packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet)  + "KB/s");
-
+        totalBd.setText("");
 
 
         return "";
