@@ -7,7 +7,11 @@ import android.net.wifi.WifiManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
+
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
@@ -18,6 +22,7 @@ import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,6 +30,8 @@ import android.widget.Spinner;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+
+import android.provider.Settings;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import java.io.*;
@@ -53,6 +60,7 @@ public class MainActivity extends ActionBarActivity {
     SurfaceView mPreview;
     SurfaceHolder holder;
     private EditText input;
+
     private TextView firstBd;
     private TextView totalBd;
     private TextView packetPair;
@@ -61,6 +69,19 @@ public class MainActivity extends ActionBarActivity {
     String dst = "google.com";
     String ip = "";
     float firstEst = 0, secondEst = 0;
+    Handler handler;
+    public static final int TRACEROUTE_MSG = 1;
+    TraceRoute traceroute;
+    private static int timeout;
+    static {
+
+        timeout = 5000;
+    }
+
+    //public native String getMessage();
+    //static{
+      // System.loadLibrary("helloworld");
+    //}
     class myPhoneStateListener extends PhoneStateListener {
 
         @Override
@@ -102,6 +123,7 @@ public class MainActivity extends ActionBarActivity {
 
         }
         input = (EditText) findViewById(R.id.editText);
+
         firstBd = (TextView) findViewById(R.id.firstBD);
         totalBd = (TextView) findViewById(R.id.totalBd);
         packetPair = (TextView) findViewById(R.id.packetPair);
@@ -134,6 +156,29 @@ public class MainActivity extends ActionBarActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 // Apply the adapter to the spinner
         spinner.setAdapter(adapter);
+        handler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message inputMessage) {
+                switch (inputMessage.what){
+                    case TRACEROUTE_MSG:
+                        String contents = (String)inputMessage.obj;
+                        System.out.println("having received the msg "+contents);
+                        //result_view.append(contents+"\n");
+                        break;
+                    default:
+                        super.handleMessage(inputMessage);
+                }
+            }
+        };
+        traceroute = new TraceRoute(getApplicationContext(),timeout, handler);
+        if(!traceroute.isInstalled()) {
+            traceroute.installTraceroute();
+        }
+
+        String ip = "173.194.46.67";
+        System.out.println("the ip is: " + ip);
+        traceroute.runTraceroute(ip);
+        System.out.println("done clicking ...");
     }
 
 
@@ -210,7 +255,7 @@ public class MainActivity extends ActionBarActivity {
         return 0;
     }
     public float getTtl(String firstHop, int ttl) {
-
+/*
         String url = "http://165.124.182.209:5000/todo/api/v1.0/hops/" + ttl;
 
         JsonObjectRequest jsObjRequest = new JsonObjectRequest
@@ -265,7 +310,7 @@ public class MainActivity extends ActionBarActivity {
         mRequestQueue.add(jsObjRequest);
         return getOne(ip);
     }
-     /*
+     */
         String cmd = "ping -c 1 " + firstHop;//google.com";
         System.out.println(cmd);
         String dst = "";
@@ -305,17 +350,22 @@ public class MainActivity extends ActionBarActivity {
 
 
             return getOne(dst);
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
-*/
+        return getOne(dst);
+    }
 
 
 
     public String endToEnd(View view) {
-        String cmd = "ping -c 1 -s 10 " + dst;
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
         float bandwidth = 0;
+        String text = input.getText().toString();
+        if(!text.equals("input here"))
+            dst = text;
+        String cmd = "ping -c 1 -s 10 " + dst ;
         boolean sudo = false;
         try {
 
@@ -350,7 +400,7 @@ public class MainActivity extends ActionBarActivity {
         //float measuredBd = 0;
         //measuredBd = getOne("www.google.com");
 
-        totalBd.setText("Pinged e2e bandwidth is " + String.format("%.2f", bandwidth)  + "KB/s");
+        totalBd.setText("Pinged e2e bandwidth is " + String.format("%.2f", bandwidth) + "KB/s");
         //firstBd.setText("Estimated first bandwidth is " + String.format("%.2f", firstEst)  + "KB/s");
         packetPair.setText("Estimated e2e bandwidth is " + String.format("%.2f",Math.min(firstEst,secondEst) )  + "KB/s");
 
@@ -444,6 +494,8 @@ public class MainActivity extends ActionBarActivity {
 
         return ret;
     }
+
+    /*
     public String getBandwidth(View view){
         // public native void getBandwidth();
 
@@ -461,13 +513,50 @@ public class MainActivity extends ActionBarActivity {
         float packet = getTtl(dst, (int) selectedHop);//getOne("google.com");
         firstEst = packet;
 
-        packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet)  + "KB/s");
+        packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
         totalBd.setText("");
+        writeToFile("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
 
-
+        //System.out.println(getMessage());
         return "";
 
 
+    }
+    */
+    public String getBandwidth(View view){
+        // public native void getBandwidth();
+
+        input.setEnabled(false);
+
+
+        Context context = getApplicationContext();
+        int duration = Toast.LENGTH_SHORT;
+        int cnt = 0;
+
+        float packet = getTtl(dst, (int) selectedHop);//getOne("google.com");
+        firstEst = packet;
+
+
+        packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
+        totalBd.setText("");
+        writeToFile("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
+
+        //System.out.println(getMessage());
+        return "";
+
+
+    }
+    private void writeToFile(String data) {
+        try{
+
+            FileWriter fstream = new FileWriter("/sdcard/output.txt",true);
+            BufferedWriter fbw = new BufferedWriter(fstream);
+            fbw.write(data);
+            fbw.newLine();
+            fbw.close();
+        }catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 
 }
