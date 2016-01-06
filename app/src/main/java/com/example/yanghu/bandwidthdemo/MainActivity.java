@@ -156,13 +156,43 @@ public class MainActivity extends ActionBarActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 // Apply the adapter to the spinner
         spinner.setAdapter(adapter);
+
+
+
+    }
+    public String findIp(String content){
+        String IPADDRESS_PATTERN =
+                "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])";
+        Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
+        Matcher matcher = pattern.matcher(content);
+        if (matcher.find()) {
+            return  matcher.group();
+        }
+        else return "not an ip";
+    }
+    public void runTraceroute(String ip){
         handler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message inputMessage) {
                 switch (inputMessage.what){
                     case TRACEROUTE_MSG:
                         String contents = (String)inputMessage.obj;
+                        String selectedIp = "";
+                        Integer sHop = Math.round(selectedHop);
+                        String hop = String.valueOf(sHop);
+                        String sub = contents.substring(1, 2);
+
+                        if( hop.equals(sub) && !contents.substring(0,1).equals("1")){
+                            selectedIp = findIp(contents);
+                            System.out.println("find it" + selectedIp);
+                            firstBd.setText("You selected hop" + (int) selectedHop + ", " + selectedIp);
+                        }
+                        System.out.println(contents.substring(1, 2));
                         System.out.println("having received the msg "+contents);
+
                         //result_view.append(contents+"\n");
                         break;
                     default:
@@ -175,13 +205,11 @@ public class MainActivity extends ActionBarActivity {
             traceroute.installTraceroute();
         }
 
-        String ip = "173.194.46.67";
+        //String ip = "173.194.46.67";
         System.out.println("the ip is: " + ip);
         traceroute.runTraceroute(ip);
         System.out.println("done clicking ...");
     }
-
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -254,6 +282,7 @@ public class MainActivity extends ActionBarActivity {
         }
         return 0;
     }
+
     public float getTtl(String firstHop, int ttl) {
 /*
         String url = "http://165.124.182.209:5000/todo/api/v1.0/hops/" + ttl;
@@ -311,6 +340,7 @@ public class MainActivity extends ActionBarActivity {
         return getOne(ip);
     }
      */
+
         String cmd = "ping -c 1 " + firstHop;//google.com";
         System.out.println(cmd);
         String dst = "";
@@ -333,8 +363,11 @@ public class MainActivity extends ActionBarActivity {
                 Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
                 Matcher matcher = pattern.matcher(s);
                 if (matcher.find()) {
+                    runTraceroute(matcher.group());
 
+                    /*
                     cnt = cnt + 1;
+
                     System.out.println("cnt ... " + cnt);
                     if (cnt == 2) {
                         System.out.println("find ip address in: " + matcher.group());
@@ -343,6 +376,7 @@ public class MainActivity extends ActionBarActivity {
                         firstBd.setText("You selected hop" + (int) selectedHop + ", " + matcher.group());
 
                     }
+                    */
                 }
 
             }
