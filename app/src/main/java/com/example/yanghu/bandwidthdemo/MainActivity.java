@@ -78,10 +78,6 @@ public class MainActivity extends ActionBarActivity {
         timeout = 5000;
     }
 
-    //public native String getMessage();
-    //static{
-      // System.loadLibrary("helloworld");
-    //}
     class myPhoneStateListener extends PhoneStateListener {
 
         @Override
@@ -173,6 +169,7 @@ public class MainActivity extends ActionBarActivity {
         }
         else return "not an ip";
     }
+
     public void runTraceroute(String ip){
         handler = new Handler(Looper.getMainLooper()) {
             @Override
@@ -189,6 +186,9 @@ public class MainActivity extends ActionBarActivity {
                             selectedIp = findIp(contents);
                             System.out.println("find it" + selectedIp);
                             firstBd.setText("You selected hop" + (int) selectedHop + ", " + selectedIp);
+                            float packet = getOne(selectedIp);
+                            packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
+                            writeToFile("First mile, " + selectedIp + ", bandwidth " + String.format("%.2f", packet) + "KB/s");
                         }
                         System.out.println(contents.substring(1, 2));
                         System.out.println("having received the msg "+contents);
@@ -284,63 +284,6 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public float getTtl(String firstHop, int ttl) {
-/*
-        String url = "http://165.124.182.209:5000/todo/api/v1.0/hops/" + ttl;
-
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
-
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-
-                            String res = response.getString("task");
-
-                            int start = res.indexOf("(");
-                            firstBd.setText("");
-                            totalBd.setText("");
-                            String IPADDRESS_PATTERN =
-                                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-                                            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-                                            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
-                                            "([01]?\\d\\d?|2[0-4]\\d|25[0-5])";
-                            Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
-                            Matcher matcher = pattern.matcher(res);
-                            if (matcher.find()) {
-                                ip = matcher.group();
-                            }
-                            firstBd.setText("You selected hop " + (int) selectedHop + ", " + ip);
-                            float lat = (Float.valueOf(res.substring(start + 12, start + 17))).floatValue();
-                            secondEst = lat;
-                        } catch (Exception e) {
-                            System.out.println(e);
-                        }
-                    }
-                }, new Response.ErrorListener() {
-
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        System.out.println(error);
-
-                    }
-                });
-
-// Access the RequestQueue through your singleton class.
-        RequestQueue mRequestQueue;
-        // Instantiate the cache
-        Cache cache = new DiskBasedCache(getCacheDir(), 1024 * 1024); // 1MB cap
-
-// Set up the network to use HttpURLConnection as the HTTP client.
-        Network network = new BasicNetwork(new HurlStack());
-
-// Instantiate the RequestQueue with the cache and network.
-        mRequestQueue = new RequestQueue(cache, network);
-        mRequestQueue.start();
-        mRequestQueue.add(jsObjRequest);
-        return getOne(ip);
-    }
-     */
-
         String cmd = "ping -c 1 " + firstHop;//google.com";
         System.out.println(cmd);
         String dst = "";
@@ -364,19 +307,6 @@ public class MainActivity extends ActionBarActivity {
                 Matcher matcher = pattern.matcher(s);
                 if (matcher.find()) {
                     runTraceroute(matcher.group());
-
-                    /*
-                    cnt = cnt + 1;
-
-                    System.out.println("cnt ... " + cnt);
-                    if (cnt == 2) {
-                        System.out.println("find ip address in: " + matcher.group());
-                        dst = matcher.group();
-                        System.out.println("dst is ...  " + dst);
-                        firstBd.setText("You selected hop" + (int) selectedHop + ", " + matcher.group());
-
-                    }
-                    */
                 }
 
             }
@@ -431,8 +361,6 @@ public class MainActivity extends ActionBarActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //float measuredBd = 0;
-        //measuredBd = getOne("www.google.com");
 
         totalBd.setText("Pinged e2e bandwidth is " + String.format("%.2f", bandwidth) + "KB/s");
         //firstBd.setText("Estimated first bandwidth is " + String.format("%.2f", firstEst)  + "KB/s");
@@ -511,55 +439,26 @@ public class MainActivity extends ActionBarActivity {
                     }
                 });
 
-// Access the RequestQueue through your singleton class.
+
         RequestQueue mRequestQueue;
-        // Instantiate the cache
+
         Cache cache = new DiskBasedCache(getCacheDir(), 1024 * 1024); // 1MB cap
 
-// Set up the network to use HttpURLConnection as the HTTP client.
         Network network = new BasicNetwork(new HurlStack());
 
-// Instantiate the RequestQueue with the cache and network.
         mRequestQueue = new RequestQueue(cache, network);
         mRequestQueue.start();
         mRequestQueue.add(jsObjRequest);
 
-        //packetPair.setText("Second segment bandwidth from 162.124.182.209 to " +  " is "+ String.format("%.2f", bandwidth)  + "KB/s");
 
         return ret;
     }
 
-    /*
+
     public String getBandwidth(View view){
         // public native void getBandwidth();
-
-        input.setEnabled(false);
-
-        String text = input.getText().toString();
-        Context context = getApplicationContext();
-        int duration = Toast.LENGTH_SHORT;
-        int cnt = 0;
-        System.out.println(text);
-        if(!text.equals("input here")){
-            dst = text;
-        }
-
-        float packet = getTtl(dst, (int) selectedHop);//getOne("google.com");
-        firstEst = packet;
-
-        packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
-        totalBd.setText("");
-        writeToFile("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
-
-        //System.out.println(getMessage());
-        return "";
-
-
-    }
-    */
-    public String getBandwidth(View view){
-        // public native void getBandwidth();
-
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
         input.setEnabled(false);
 
 
@@ -571,9 +470,9 @@ public class MainActivity extends ActionBarActivity {
         firstEst = packet;
 
 
-        packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
+        //packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
         totalBd.setText("");
-        writeToFile("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
+        //writeToFile("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
 
         //System.out.println(getMessage());
         return "";
