@@ -368,6 +368,12 @@ public class MainActivity extends ActionBarActivity {
 
         return "";
     }
+    public float realBandwidht(View view){
+        // this function sends continuous packets to the server until limitation
+        
+        return 10000;
+
+    }
     public String queryKing(View view) {
         String ret = "";
 
