@@ -49,12 +49,29 @@
             android:editable="true"
             android:imeOptions="actionDone" />
 
-        <Button
-            android:layout_width="160dp"
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="End to end"
-            android:id="@+id/button3"
-            android:onClick="endToEnd" />
+            android:layout_gravity="center_horizontal">
+
+            <Button
+                android:layout_width="160dp"
+                android:layout_height="wrap_content"
+                android:text="End to end"
+                android:id="@+id/button3"
+                android:onClick="endToEnd"
+                android:layout_gravity="left"
+                android:singleLine="false" />
+
+            <Button
+                android:layout_width="191dp"
+                android:layout_height="wrap_content"
+                android:text="@string/groundTruth"
+                android:onClick="realBandwidth"
+                android:id="@+id/button4" />
+        </LinearLayout>
+
 
         <Button
             android:layout_width="160dp"

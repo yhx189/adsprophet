@@ -4,5 +4,6 @@
     <string name="app_name">Bandwidthdemo</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="groundTruth">Ground truth</string>
 
 </resources>

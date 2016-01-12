@@ -36,6 +36,7 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.*;
 import org.json.JSONObject;
@@ -187,11 +188,15 @@ public class MainActivity extends ActionBarActivity {
                             System.out.println("find it" + selectedIp);
                             firstBd.setText("You selected hop" + (int) selectedHop + ", " + selectedIp);
                             float packet = getOne(selectedIp);
-                            packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
-                            writeToFile("First mile, " + selectedIp + ", bandwidth " + String.format("%.2f", packet) + "KB/s");
+                            packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet) + "MB/s");
+                            float pTrain = getPacketTrain(selectedIp);
+                            totalBd.setText("Packet train bandwidth is "+ String.format("%.2f", pTrain) + "MB/s");
+                            writeToFile("First mile, " + selectedIp + ", packet pair bandwidth " + String.format("%.2f", packet) + "MB/s,"
+                            + "packet train bandwidth " + String.format("%.2f", pTrain) +"MB/s");
                         }
                         System.out.println(contents.substring(1, 2));
                         System.out.println("having received the msg "+contents);
+                        misc _misc = new misc();
 
                         //result_view.append(contents+"\n");
                         break;
@@ -261,11 +266,11 @@ public class MainActivity extends ActionBarActivity {
             if(start != -1){
                 System.out.println(res);
                 lat = (Float.valueOf(res.substring(start+26, start+30 ))).floatValue();
-                bandwidth = 5000 / lat;
+                bandwidth = 500 / lat;
 
                 text = "current latency is " + lat + "ms\n";
                 //System.out.println("current latency is " + lat + "ms\n");
-                text = text + "current bandwidth is " + bandwidth + "KBps\n";
+                text = text + "current bandwidth is " + bandwidth + "MBps\n";
                 //Toast toast = Toast.makeText(context, text, duration);
                 //toast.show();
                 //System.out.println("current bandwidth is " + bandwidth + "KBps\n");
@@ -351,7 +356,7 @@ public class MainActivity extends ActionBarActivity {
             if(start != -1){
                 float lat = (Float.valueOf(res.substring(start+26, start+30 ))).floatValue();
 
-                bandwidth = 5000 / lat;
+                bandwidth = 500 / lat;
                 input.setEnabled(true);
 
             }else {
@@ -362,18 +367,14 @@ public class MainActivity extends ActionBarActivity {
             e.printStackTrace();
         }
 
-        totalBd.setText("Pinged e2e bandwidth is " + String.format("%.2f", bandwidth) + "KB/s");
+        totalBd.setText("Pinged e2e bandwidth is " + String.format("%.2f", bandwidth) + "MB/s");
+        writeToFile("Pinged e2e bandwidth is " + String.format("%.2f", bandwidth) + "Mb/s");
         //firstBd.setText("Estimated first bandwidth is " + String.format("%.2f", firstEst)  + "KB/s");
-        packetPair.setText("Estimated e2e bandwidth is " + String.format("%.2f",Math.min(firstEst,secondEst) )  + "KB/s");
+        packetPair.setText("Estimated e2e bandwidth is " + String.format("%.2f", Math.min(firstEst, secondEst)) + "MB/s");
 
         return "";
     }
-    public float realBandwidht(View view){
-        // this function sends continuous packets to the server until limitation
-        
-        return 10000;
 
-    }
     public String queryKing(View view) {
         String ret = "";
 
@@ -478,6 +479,7 @@ public class MainActivity extends ActionBarActivity {
 
         //packetPair.setText("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
         totalBd.setText("");
+        calcMean(context);
         //writeToFile("Packet pair bandwidth is " + String.format("%.2f", packet) + "KB/s");
 
         //System.out.println(getMessage());
@@ -485,6 +487,36 @@ public class MainActivity extends ActionBarActivity {
 
 
     }
+    public void sendProbe(String nextHop){
+        misc myMisc = new misc();
+        myMisc.sendProbe();
+
+    }
+    public float getPacketTrain(String firstHop) {
+        // this function tests available bandwidth using packet train algorithm
+        float bds[] = new float[10];
+        for(int i = 0; i < 9; i++){
+            bds[i] = getOne(firstHop);
+        }
+        Arrays.sort(bds);
+
+        return bds[5];
+    }
+    public float realBandwidth(View view){
+        // this function sends continuous packets to the server until limitation
+        float packet = 0;
+        Log.d("demo", "testing down link ground truth");
+
+        firstBd.setText("");
+        totalBd.setText("");
+        packetPair.setText("Ground truth available bandwidth is " + String.format("%.2f", packet) + "MB/s");
+        writeToFile("Ground truth available bandwidth is " + String.format("%.2f", packet) + "MB/s");
+        return 10000;
+
+    }
+
+
+    // utils
     private void writeToFile(String data) {
         try{
 
@@ -497,5 +529,35 @@ public class MainActivity extends ActionBarActivity {
             System.out.println("Error: " + e.getMessage());
         }
     }
+    public void calcMean(Context context){
 
+        try
+        {
+            InputStream instream = context.openFileInput("/sdcard/output.txt");
+            System.out.println("this is reading");
+            if (instream != null)
+            {
+                InputStreamReader inputreader = new InputStreamReader(instream);
+                BufferedReader buffreader = new BufferedReader(inputreader);
+                String line = "", line1 = "";
+                try
+                {
+                    while ((line = buffreader.readLine()) != null) {
+                        line1 += line;
+                        System.out.println(line);
+                    }
+                }catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            String error="";
+            error=e.getMessage();
+
+        }
+
+    }
 }
