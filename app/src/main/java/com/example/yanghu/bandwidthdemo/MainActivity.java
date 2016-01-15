@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.CountDownTimer;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
@@ -177,6 +178,7 @@ public class MainActivity extends ActionBarActivity {
             public void handleMessage(Message inputMessage) {
                 switch (inputMessage.what){
                     case TRACEROUTE_MSG:
+
                         String contents = (String)inputMessage.obj;
                         String selectedIp = "";
                         Integer sHop = Math.round(selectedHop);
@@ -248,16 +250,29 @@ public class MainActivity extends ActionBarActivity {
         try {
 
             Process p;
+
             if(!sudo)
                 p= Runtime.getRuntime().exec(cmd);
             else{
                 p= Runtime.getRuntime().exec(new String[]{"su", "-c", cmd});
             }
+
+
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
             String s;
             String res = "";
             while ((s = stdInput.readLine()) != null) {
                 res += s + "\n";
+            }
+            ProcessWithTimeout processWithTimeout = new ProcessWithTimeout(p, "get one");
+            int exitCode = processWithTimeout.waitForProcess(timeout);
+            if (exitCode == Integer.MIN_VALUE)
+            {
+                System.out.println("TIMEOUT");
+            }
+            else
+            {
+                System.out.println("get one hop bandwidth finished successfully");
             }
             p.destroy();
             int start = res.indexOf("min/avg/max/mdev =");
@@ -496,7 +511,36 @@ public class MainActivity extends ActionBarActivity {
         // this function tests available bandwidth using packet train algorithm
         float bds[] = new float[10];
         for(int i = 0; i < 9; i++){
-            bds[i] = getOne(firstHop);
+            String cmd = "ping -c 1 -s 10 " + firstHop ;
+            boolean sudo = false;
+            try {
+
+                Process p;
+                p= Runtime.getRuntime().exec(cmd);
+
+                BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String s;
+                String res = "";
+                while ((s = stdInput.readLine()) != null) {
+                    res += s + "\n";
+
+                }
+                p.destroy();
+                int start = res.indexOf("min/avg/max/mdev =");
+                if(start != -1){
+                    float lat = (Float.valueOf(res.substring(start+26, start+30 ))).floatValue();
+
+                    bds[i] = 500 / lat;
+                    input.setEnabled(true);
+
+                }else {
+                    System.out.println(res);
+                }
+                //return res;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            //bds[i] = getOne(firstHop);
         }
         Arrays.sort(bds);
 
