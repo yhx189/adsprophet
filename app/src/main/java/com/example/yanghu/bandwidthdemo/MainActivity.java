@@ -36,6 +36,7 @@ import android.provider.Settings;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import java.io.*;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,6 +71,7 @@ public class MainActivity extends ActionBarActivity {
     String dstIp;
     String dst = "google.com";
     String ip = "";
+    String selectedIp = "";
     float firstEst = 0, secondEst = 0;
     Handler handler;
     public static final int TRACEROUTE_MSG = 1;
@@ -180,7 +182,7 @@ public class MainActivity extends ActionBarActivity {
                     case TRACEROUTE_MSG:
 
                         String contents = (String)inputMessage.obj;
-                        String selectedIp = "";
+                        //String selectedIp = "";
                         Integer sHop = Math.round(selectedHop);
                         String hop = String.valueOf(sHop);
                         String sub = contents.substring(1, 2);
@@ -384,13 +386,16 @@ public class MainActivity extends ActionBarActivity {
 
         totalBd.setText("Pinged e2e bandwidth is " + String.format("%.2f", bandwidth) + "MB/s");
         writeToFile("Pinged e2e bandwidth is " + String.format("%.2f", bandwidth) + "Mb/s");
+        firstEst = getOne(dst);
+        secondEst = queryKingHelper();
+        packetPair.setText("first mile " + firstEst);
+        firstBd.setText("second segment " + secondEst);
         //firstBd.setText("Estimated first bandwidth is " + String.format("%.2f", firstEst)  + "KB/s");
-        packetPair.setText("Estimated e2e bandwidth is " + String.format("%.2f", Math.min(firstEst, secondEst)) + "MB/s");
+        //packetPair.setText("Estimated e2e bandwidth is " + String.format("%.2f", Math.min(firstEst, secondEst)) + "MB/s");
 
         return "";
     }
-
-    public String queryKing(View view) {
+    public float queryKingHelper(){
         String ret = "";
 
         float bandwidth = 0;
@@ -398,7 +403,6 @@ public class MainActivity extends ActionBarActivity {
         TextView mTxtDisplay;
         ImageView mImageView;
         int cnt = 0;
-
 
         String cmd = "ping -c 1 -s 10 " + dst;
         try {
@@ -433,7 +437,8 @@ public class MainActivity extends ActionBarActivity {
         }catch(Exception e){
             System.out.println(e);
         }
-        String url = "http://165.124.182.209:5000/todo/api/v1.0/tasks/" + dstIp;
+
+        String url = "http://165.124.182.209:5000/todo/api/v1.0/tasks/" + dstIp+"/"+ selectedIp;
         JsonObjectRequest jsObjRequest = new JsonObjectRequest
                 (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
 
@@ -443,11 +448,9 @@ public class MainActivity extends ActionBarActivity {
 
                             String res = response.getString("task");
                             int start = res.indexOf("bandwidth");
-                            firstBd.setText("");
-                            totalBd.setText("");
-                            packetPair.setText("Second Segment bandwidth: " +  res.substring(start + 12, start + 17) + "KB/s");
+
                             float lat = (Float.valueOf(res.substring(start+12, start+17 ))).floatValue();
-                            secondEst = lat;
+                            secondEst = lat/1000;
                         }catch(Exception e){
                             System.out.println(e);
                         }
@@ -473,7 +476,16 @@ public class MainActivity extends ActionBarActivity {
         mRequestQueue.add(jsObjRequest);
 
 
-        return ret;
+        return secondEst;
+    }
+    public float queryKing(View view) {
+        secondEst = queryKingHelper();
+        firstBd.setText("");
+        totalBd.setText("");
+        packetPair.setText("Second Segment bandwidth: " +  secondEst + "MB/s");
+
+
+        return secondEst;
     }
 
 
@@ -550,6 +562,20 @@ public class MainActivity extends ActionBarActivity {
         // this function sends continuous packets to the server until limitation
         float packet = 0;
         Log.d("demo", "testing down link ground truth");
+        try{
+           DatagramSocket ds = new DatagramSocket(50074);
+            byte[] ms = new byte[1024];
+            String a="Computer";
+            ms=a.getBytes();
+
+            DatagramPacket ps = new DatagramPacket(ms, ms.length, InetAddress.getByName("165.124.182.209"),5999);
+            ds.send(ps);
+            System.out.println(InetAddress.getLocalHost().getHostAddress());
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+
+
 
         firstBd.setText("");
         totalBd.setText("");
